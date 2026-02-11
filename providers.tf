@@ -6,13 +6,17 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 
   # Uncomment to enable remote state storage:
   # backend "s3" {
   #   bucket         = "borod-bank-tfstate"
   #   key            = "eks/terraform.tfstate"
-  #   region         = "eu-central-1"
+  #   region         = "us-east-1"
   #   dynamodb_table = "borod-bank-tflock"
   #   encrypt        = true
   # }

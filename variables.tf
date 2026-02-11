@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for all resources"
   type        = string
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "project_name" {
@@ -61,5 +61,5 @@ variable "node_max_size" {
 variable "cluster_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
-  default     = "1.28"
+  default     = "1.31"
 }
