@@ -21,7 +21,7 @@ Terraform configuration for provisioning AWS EKS infrastructure for the Borod Ba
 │  │                     │                               │  │
 │  │              ┌──────┴──────┐                        │  │
 │  │              │  EKS Cluster│                        │  │
-│  │              │  (K8s 1.28) │                        │  │
+│  │              │  (K8s 1.31) │                        │  │
 │  │              └──────┬──────┘                        │  │
 │  │                     │                               │  │
 │  │              ┌──────┴──────┐                        │  │
@@ -62,21 +62,21 @@ terraform plan
 terraform apply
 
 # 3. Configure kubectl
-aws eks update-kubeconfig --name borod-bank-cluster --region eu-central-1
+aws eks update-kubeconfig --name borod-bank-cluster --region us-east-1
 ```
 
 ## Inputs
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `aws_region` | AWS region | `eu-central-1` |
+| `aws_region` | AWS region | `us-east-1` |
 | `project_name` | Resource naming prefix | `borod-bank` |
 | `environment` | Environment tag | `dev` |
 | `vpc_cidr` | VPC CIDR block | `10.0.0.0/16` |
 | `ssh_key_name` | EC2 SSH key pair name | `borod-bank-key` |
 | `node_instance_types` | Node instance types | `["t3.medium"]` |
-| `node_desired_size` | Desired node count | `3` |
-| `cluster_version` | K8s version | `1.28` |
+| `node_desired_size` | Desired node count | `2` |
+| `cluster_version` | K8s version | `1.31` |
 
 ## Outputs
 
