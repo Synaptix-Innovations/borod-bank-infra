@@ -63,3 +63,21 @@ variable "cluster_version" {
   type        = string
   default     = "1.31"
 }
+
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_name" {
+  description = "Name of the initial database to create"
+  type        = string
+  default     = "borodbankdb"
+}
+
+variable "db_username" {
+  description = "Master username for RDS"
+  type        = string
+  default     = "admin"
+}

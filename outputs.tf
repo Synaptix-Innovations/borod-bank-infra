@@ -37,3 +37,28 @@ output "oidc_provider_arn" {
   description = "ARN of the OIDC provider for IRSA"
   value       = aws_iam_openid_connect_provider.eks.arn
 }
+
+output "rds_endpoint" {
+  description = "RDS MySQL endpoint (use in SPRING_DATASOURCE_URL)"
+  value       = aws_db_instance.main.endpoint
+}
+
+output "rds_secret_arn" {
+  description = "ARN of the Secrets Manager secret for RDS master password"
+  value       = aws_db_instance.main.master_user_secret[0].secret_arn
+}
+
+output "lbc_role_arn" {
+  description = "IAM role ARN for AWS Load Balancer Controller (use in ServiceAccount annotation)"
+  value       = aws_iam_role.lbc.arn
+}
+
+output "eso_role_arn" {
+  description = "IAM role ARN for External Secrets Operator (use in ServiceAccount annotation)"
+  value       = aws_iam_role.eso.arn
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs (used by RDS)"
+  value       = aws_subnet.private[*].id
+}

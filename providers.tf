@@ -12,14 +12,15 @@ terraform {
     }
   }
 
-  # Uncomment to enable remote state storage:
-  # backend "s3" {
-  #   bucket         = "borod-bank-tfstate"
-  #   key            = "eks/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "borod-bank-tflock"
-  #   encrypt        = true
-  # }
+  # Run bootstrap/main.tf ONCE first to create the S3 bucket and DynamoDB table.
+  # Then run: terraform init (will prompt to migrate local state to S3)
+  backend "s3" {
+    bucket         = "borod-bank-tfstate"
+    key            = "eks/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "borod-bank-tfstate-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {

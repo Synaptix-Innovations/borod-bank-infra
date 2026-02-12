@@ -24,8 +24,38 @@ resource "aws_subnet" "main" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.project_name}-subnet-${count.index}"
+    Name                                                   = "${var.project_name}-public-${count.index}"
+    "kubernetes.io/cluster/${var.project_name}-cluster"    = "shared"
+    "kubernetes.io/role/elb"                               = "1"
   }
+}
+
+# Private subnets — used exclusively by RDS (no public IP, no IGW route)
+resource "aws_subnet" "private" {
+  count             = var.subnet_count
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index + 10)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name                                                   = "${var.project_name}-private-${count.index}"
+    "kubernetes.io/cluster/${var.project_name}-cluster"    = "shared"
+    "kubernetes.io/role/internal-elb"                      = "1"
+  }
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-private-rt"
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  count          = var.subnet_count
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private.id
 }
 
 resource "aws_internet_gateway" "main" {
@@ -53,6 +83,17 @@ resource "aws_route_table_association" "main" {
   count          = var.subnet_count
   subnet_id      = aws_subnet.main[count.index].id
   route_table_id = aws_route_table.main.id
+}
+
+# --- RDS Subnet Group ---
+
+resource "aws_db_subnet_group" "main" {
+  name       = "${var.project_name}-db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name = "${var.project_name}-db-subnet-group"
+  }
 }
 
 # --- Security Groups ---
@@ -109,6 +150,29 @@ resource "aws_security_group" "node" {
 
   tags = {
     Name = "${var.project_name}-node-sg"
+  }
+}
+
+# RDS Security Group — allows MySQL only from EKS nodes
+resource "aws_security_group" "rds" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.node.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-rds-sg"
   }
 }
 
