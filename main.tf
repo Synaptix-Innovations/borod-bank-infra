@@ -244,6 +244,12 @@ resource "aws_eks_cluster" "main" {
     security_group_ids = [aws_security_group.cluster.id]
   }
 
+  tags = {
+    Name      = "${var.project_name}-cluster"
+    ManagedBy = "terraform"
+    Project   = var.project_name
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.cluster_policy
   ]
@@ -268,6 +274,16 @@ resource "aws_eks_node_group" "main" {
   remote_access {
     ec2_ssh_key               = var.ssh_key_name
     source_security_group_ids = [aws_security_group.node.id]
+  }
+
+  # Tags propagate to EC2 instances and the underlying ASG
+  # Name tag lets you identify nodes in the AWS console at a glance
+  tags = {
+    Name        = "${var.project_name}-worker"
+    Role        = "eks-worker"
+    Cluster     = "${var.project_name}-cluster"
+    ManagedBy   = "terraform"
+    Project     = var.project_name
   }
 
   depends_on = [
