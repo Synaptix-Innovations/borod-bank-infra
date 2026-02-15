@@ -157,13 +157,6 @@ resource "aws_security_group" "node" {
 resource "aws_security_group" "rds" {
   vpc_id = aws_vpc.main.id
 
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.node.id]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -174,6 +167,21 @@ resource "aws_security_group" "rds" {
   tags = {
     Name = "${var.project_name}-rds-sg"
   }
+}
+
+# EKS managed node groups attach the EKS-created cluster security group to nodes,
+# not the Terraform-managed node SG. This rule allows MySQL from that cluster SG.
+# Must be a separate resource to avoid circular dependency with aws_eks_cluster.
+resource "aws_security_group_rule" "rds_from_eks_cluster_sg" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  description              = "Allow MySQL from EKS managed cluster security group"
+
+  depends_on = [aws_eks_cluster.main]
 }
 
 # --- IAM Roles ---
