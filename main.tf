@@ -265,6 +265,27 @@ resource "aws_eks_cluster" "main" {
 
 # --- EKS Node Group ---
 
+# Launch template sets Name tag directly on EC2 instances via tag_specifications.
+# aws_eks_node_group tags go to the NodeGroup/ASG but do not propagate to instances.
+resource "aws_launch_template" "node" {
+  name_prefix = "${var.project_name}-node-"
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name      = "${var.project_name}-worker"
+      Role      = "eks-worker"
+      Cluster   = "${var.project_name}-cluster"
+      ManagedBy = "terraform"
+      Project   = var.project_name
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-node-group"
@@ -279,19 +300,15 @@ resource "aws_eks_node_group" "main" {
 
   instance_types = var.node_instance_types
 
-  remote_access {
-    ec2_ssh_key               = var.ssh_key_name
-    source_security_group_ids = [aws_security_group.node.id]
+  launch_template {
+    id      = aws_launch_template.node.id
+    version = aws_launch_template.node.latest_version
   }
 
-  # Tags propagate to EC2 instances and the underlying ASG
-  # Name tag lets you identify nodes in the AWS console at a glance
   tags = {
-    Name        = "${var.project_name}-worker"
-    Role        = "eks-worker"
-    Cluster     = "${var.project_name}-cluster"
-    ManagedBy   = "terraform"
-    Project     = var.project_name
+    Name      = "${var.project_name}-node-group"
+    ManagedBy = "terraform"
+    Project   = var.project_name
   }
 
   depends_on = [
