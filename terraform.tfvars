@@ -1,0 +1,11 @@
+aws_region          = "us-east-1"
+project_name        = "borod-bank"
+environment         = "dev"
+vpc_cidr            = "10.0.0.0/16"
+subnet_count        = 3
+ssh_key_name        = "borod-bank-key"
+node_instance_types = ["t3.large"]
+node_desired_size   = 3
+node_min_size       = 2
+node_max_size       = 4
+cluster_version     = "1.31"
