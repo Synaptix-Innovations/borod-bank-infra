@@ -45,7 +45,7 @@ check_deps() {
 # STEP 1 — Get terraform outputs
 # ─────────────────────────────────────────────
 get_outputs() {
-  step "1/9 — Reading terraform outputs..."
+  step "1/10 — Reading terraform outputs..."
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   INFRA_DIR="$(dirname "$SCRIPT_DIR")"
   cd "$INFRA_DIR"
@@ -53,17 +53,21 @@ get_outputs() {
   VPC_ID=$(terraform output -raw vpc_id)
   RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
   RDS_SECRET_ARN=$(terraform output -raw rds_secret_arn)
+  EIP_ALLOCATION_IDS=$(terraform output -json eip_allocation_ids | jq -r 'join(",")')
+  EIP_PUBLIC_IPS=$(terraform output -json eip_public_ips | jq -r 'join(", ")')
 
-  info "VPC ID:        $VPC_ID"
-  info "RDS Endpoint:  $RDS_ENDPOINT"
-  info "RDS Secret:    $RDS_SECRET_ARN"
+  info "VPC ID:            $VPC_ID"
+  info "RDS Endpoint:      $RDS_ENDPOINT"
+  info "RDS Secret:        $RDS_SECRET_ARN"
+  info "EIP Alloc IDs:     $EIP_ALLOCATION_IDS"
+  info "EIP Public IPs:    $EIP_PUBLIC_IPS"
 }
 
 # ─────────────────────────────────────────────
 # STEP 2 — Update kubeconfig
 # ─────────────────────────────────────────────
 update_kubeconfig() {
-  step "2/9 — Updating kubeconfig..."
+  step "2/10 — Updating kubeconfig..."
   aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
 
   info "Waiting for nodes to be Ready..."
@@ -75,7 +79,7 @@ update_kubeconfig() {
 # STEP 3 — Update vpcId in aws-lbc.yml and push
 # ─────────────────────────────────────────────
 update_vpc_id() {
-  step "3/9 — Updating vpcId in aws-lbc.yml..."
+  step "3/10 — Updating vpcId in aws-lbc.yml..."
   LBC_FILE="$CD_REPO_PATH/argocd/apps/aws-load-balancer-controller.yml"
 
   if [ ! -f "$LBC_FILE" ]; then
@@ -95,8 +99,36 @@ update_vpc_id() {
 # ─────────────────────────────────────────────
 # STEP 4 — Update AWS SM: mysql secret
 # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# STEP 4 — Update EIP allocations in ingress-nginx.yml
+# ─────────────────────────────────────────────
+update_eip_annotations() {
+  step "4/10 — Updating EIP allocation IDs in ingress-nginx.yml..."
+  NGINX_FILE="$CD_REPO_PATH/argocd/apps/ingress-nginx.yml"
+
+  if [ ! -f "$NGINX_FILE" ]; then
+    error "File not found: $NGINX_FILE (set CD_REPO_PATH env var)"
+  fi
+
+  sed -i "s|aws-load-balancer-eip-allocations: .*|aws-load-balancer-eip-allocations: \"${EIP_ALLOCATION_IDS}\"|" "$NGINX_FILE"
+  info "Updated EIP allocations to: $EIP_ALLOCATION_IDS"
+
+  cd "$CD_REPO_PATH"
+  git add argocd/apps/ingress-nginx.yml
+  if git diff --cached --quiet; then
+    info "EIP allocation IDs unchanged — no commit needed"
+  else
+    git commit -m "infra: update NLB EIP allocation IDs after terraform apply"
+    git push
+    info "Pushed EIP annotation update to borod-bank-cd"
+  fi
+}
+
+# ─────────────────────────────────────────────
+# STEP 5 — Update AWS SM: mysql secret
+# ─────────────────────────────────────────────
 update_mysql_secret() {
-  step "4/9 — Updating borod-bank/mysql in AWS Secrets Manager..."
+  step "5/10 — Updating borod-bank/mysql in AWS Secrets Manager..."
 
   # RDS managed password is in RDS_SECRET_ARN — extract it
   RDS_PASSWORD=$(aws secretsmanager get-secret-value \
@@ -134,7 +166,7 @@ update_mysql_secret() {
 # STEP 5 — Bootstrap ArgoCD
 # ─────────────────────────────────────────────
 bootstrap_argocd() {
-  step "5/9 — Bootstrapping ArgoCD..."
+  step "6/10 — Bootstrapping ArgoCD..."
 
   kubectl create namespace "$ARGOCD_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
   kubectl apply -n "$ARGOCD_NAMESPACE" \
@@ -181,7 +213,7 @@ bootstrap_argocd() {
 # STEP 6 — Wait for core apps to sync
 # ─────────────────────────────────────────────
 wait_for_apps() {
-  step "6/9 — Waiting for core pods to come up..."
+  step "7/10 — Waiting for core pods to come up..."
   info "This takes 5-10 minutes for all images to pull..."
 
   for NS in kube-system cert-manager ingress-nginx; do
@@ -197,7 +229,7 @@ wait_for_apps() {
 # STEP 7 — SonarQube post-deploy
 # ─────────────────────────────────────────────
 setup_sonarqube() {
-  step "7/9 — SonarQube post-deploy setup..."
+  step "8/10 — SonarQube post-deploy setup..."
 
   info "Waiting for SonarQube pod..."
   kubectl wait --for=condition=Ready pod -l app=sonarqube \
@@ -262,7 +294,7 @@ setup_sonarqube() {
 # STEP 8 — ESO resync + Jenkins restart
 # ─────────────────────────────────────────────
 resync_secrets() {
-  step "8/9 — ESO resync and Jenkins restart..."
+  step "9/10 — ESO resync and Jenkins restart..."
 
   # Force ESO to re-pull updated secrets
   for ES in jenkins-secrets mysql-secret sonarqube-secret grafana-secret; do
@@ -288,12 +320,8 @@ resync_secrets() {
 # STEP 9 — Print summary
 # ─────────────────────────────────────────────
 print_summary() {
-  step "9/9 — Summary"
+  step "10/10 — Summary"
   echo ""
-
-  NLB_HOST=$(kubectl get svc ingress-nginx-controller \
-    -n ingress-nginx \
-    -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "not ready yet")
 
   ARGOCD_PASS=$(kubectl -n "$ARGOCD_NAMESPACE" get secret argocd-initial-admin-secret \
     -o jsonpath='{.data.password}' | base64 -d 2>/dev/null || echo "check kubectl")
@@ -302,15 +330,18 @@ print_summary() {
   echo -e "${CYAN}  Borod Bank deploy complete${NC}"
   echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
-  echo "  NLB Hostname:  $NLB_HOST"
-  echo "  ArgoCD pass:   $ARGOCD_PASS"
+  echo "  Static EIP IPs:  $EIP_PUBLIC_IPS"
+  echo "  ArgoCD pass:     $ARGOCD_PASS"
   echo ""
-  echo -e "${YELLOW}  DNS (one-time if domain not set):${NC}"
-  echo "  CNAME vladinnovations.info → $NLB_HOST"
-  echo "  CNAME app.vladinnovations.info → $NLB_HOST"
+  echo -e "${YELLOW}  DNS A-records (set ONCE — IPs never change between deploys):${NC}"
+  for IP in $(echo "$EIP_PUBLIC_IPS" | tr ',' ' '); do
+    IP=$(echo "$IP" | xargs)
+    echo "  A  vladinnovations.info     → $IP"
+    echo "  A  app.vladinnovations.info → $IP"
+  done
   echo ""
   echo -e "${YELLOW}  Next:${NC}"
-  echo "  1. Update DNS CNAME records above"
+  echo "  1. Set DNS A-records above (only if not already set)"
   echo "  2. Trigger Jenkins build in ArgoCD UI"
   echo "  3. Access: https://app.vladinnovations.info"
   echo ""
@@ -330,6 +361,7 @@ main() {
   get_outputs
   update_kubeconfig
   update_vpc_id
+  update_eip_annotations
   update_mysql_secret
   bootstrap_argocd
   wait_for_apps

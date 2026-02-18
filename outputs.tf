@@ -62,3 +62,13 @@ output "private_subnet_ids" {
   description = "Private subnet IDs (used by RDS)"
   value       = aws_subnet.private[*].id
 }
+
+output "eip_allocation_ids" {
+  description = "EIP allocation IDs for NLB ingress-nginx annotation (comma-separated in post-deploy.sh)"
+  value       = aws_eip.nlb[*].id
+}
+
+output "eip_public_ips" {
+  description = "Static public IPs for NLB — set DNS A-records to these once, never change"
+  value       = aws_eip.nlb[*].public_ip
+}
