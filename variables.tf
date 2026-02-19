@@ -35,15 +35,15 @@ variable "ssh_key_name" {
 }
 
 variable "node_instance_types" {
-  description = "EC2 instance types for EKS node group"
+  description = "EC2 instance types for EKS node group (t3.large: 2 vCPU, 8GB RAM)"
   type        = list(string)
-  default     = ["t3.large"]
+  default     = ["t3.large"] # 3× t3.large = $182/month, sufficient for full stack
 }
 
 variable "node_desired_size" {
   description = "Desired number of nodes in the EKS node group"
   type        = number
-  default     = 3
+  default     = 3 # Optimal: 56% CPU, 28% Memory utilization (see CAPACITY-PLANNING.md)
 }
 
 variable "node_min_size" {
@@ -65,9 +65,9 @@ variable "cluster_version" {
 }
 
 variable "db_instance_class" {
-  description = "RDS instance class"
+  description = "RDS instance class (db.t3.micro is free tier eligible for 750 hours)"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t3.micro" # After free tier: $0.016/hour = $12/month
 }
 
 variable "db_name" {
