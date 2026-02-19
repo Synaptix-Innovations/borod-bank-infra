@@ -72,3 +72,13 @@ output "eip_public_ips" {
   description = "Static public IPs for NLB — set DNS A-records to these once, never change"
   value       = aws_eip.nlb[*].public_ip
 }
+
+output "loki_role_arn" {
+  description = "IAM role ARN for Loki (use in ServiceAccount annotation)"
+  value       = aws_iam_role.loki.arn
+}
+
+output "loki_s3_bucket" {
+  description = "S3 bucket name for Loki logs storage"
+  value       = aws_s3_bucket.loki_logs.id
+}
