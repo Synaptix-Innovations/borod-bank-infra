@@ -20,6 +20,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "loki_logs" {
     id     = "delete-old-logs"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90 # Delete logs older than 90 days (Loki retention is 30 days)
     }
@@ -32,6 +34,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "loki_logs" {
   rule {
     id     = "transition-to-glacier"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 60 # Move logs older than 60 days to Glacier (cheaper)
