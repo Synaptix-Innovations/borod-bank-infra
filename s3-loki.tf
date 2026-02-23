@@ -21,7 +21,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "loki_logs" {
     status = "Enabled"
 
     expiration {
-      days = 90  # Delete logs older than 90 days (Loki retention is 30 days)
+      days = 90 # Delete logs older than 90 days (Loki retention is 30 days)
     }
 
     noncurrent_version_expiration {
@@ -34,7 +34,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "loki_logs" {
     status = "Enabled"
 
     transition {
-      days          = 60  # Move logs older than 60 days to Glacier (cheaper)
+      days          = 60 # Move logs older than 60 days to Glacier (cheaper)
       storage_class = "GLACIER"
     }
   }
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_versioning" "loki_logs" {
   bucket = aws_s3_bucket.loki_logs.id
 
   versioning_configuration {
-    status = "Disabled"  # No need for versioning on log chunks
+    status = "Disabled" # No need for versioning on log chunks
   }
 }
 
@@ -53,7 +53,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "loki_logs" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"  # S3-managed encryption (free)
+      sse_algorithm = "AES256" # S3-managed encryption (free)
     }
   }
 }
