@@ -29,8 +29,13 @@ resource "aws_eks_node_group" "aiops" {
   # Single AZ — EBS PVC must be in same AZ as GPU node
   subnet_ids = [aws_subnet.main[0].id]
 
-  capacity_type  = "SPOT"
-  instance_types = ["g4dn.xlarge"]
+  capacity_type = "SPOT"
+  # Multiple GPU instance types for SPOT diversity — same T4/A10G GPU, same VRAM tier.
+  # EKS picks whichever has available SPOT capacity.
+  # g4dn.xlarge  : 4 vCPU, 16 GB RAM, 1x T4 16 GB VRAM
+  # g4dn.2xlarge : 8 vCPU, 32 GB RAM, 1x T4 16 GB VRAM
+  # g5.xlarge    : 4 vCPU, 16 GB RAM, 1x A10G 24 GB VRAM
+  instance_types = ["g4dn.xlarge", "g4dn.2xlarge", "g5.xlarge"]
   ami_type       = "AL2_x86_64_GPU"
 
   scaling_config {
