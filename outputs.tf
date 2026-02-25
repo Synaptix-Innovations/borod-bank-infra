@@ -82,3 +82,13 @@ output "loki_s3_bucket" {
   description = "S3 bucket name for Loki logs storage"
   value       = aws_s3_bucket.loki_logs.id
 }
+
+output "efs_filesystem_id" {
+  description = "EFS filesystem ID for Maven cache (inject into efs/storageclass.yml)"
+  value       = aws_efs_file_system.maven_cache.id
+}
+
+output "efs_csi_role_arn" {
+  description = "IAM role ARN for EFS CSI Driver"
+  value       = aws_iam_role.efs_csi.arn
+}

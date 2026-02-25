@@ -29,3 +29,19 @@ resource "aws_kms_alias" "rds" {
   name          = "alias/${var.project_name}-rds"
   target_key_id = aws_kms_key.rds.key_id
 }
+
+# KMS key for EFS (Maven cache)
+resource "aws_kms_key" "efs" {
+  description             = "${var.project_name} EFS Maven cache"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = {
+    Name = "${var.project_name}-efs-key"
+  }
+}
+
+resource "aws_kms_alias" "efs" {
+  name          = "alias/${var.project_name}-efs"
+  target_key_id = aws_kms_key.efs.key_id
+}
