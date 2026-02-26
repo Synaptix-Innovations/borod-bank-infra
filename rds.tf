@@ -41,12 +41,13 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   parameter_group_name   = aws_db_parameter_group.main.name
 
-  backup_retention_period = 1 # Optimized: 1 day instead of 7 (saves $2-3/month on backup storage)
+  backup_retention_period = 7
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  deletion_protection = false # set true for production
-  skip_final_snapshot = true
+  deletion_protection       = true
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.project_name}-db-final-snapshot"
 
   publicly_accessible = false
 

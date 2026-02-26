@@ -11,9 +11,9 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Deployment environment (dev, staging, prod)"
+  description = "Deployment environment"
   type        = string
-  default     = "dev"
+  default     = "production"
 }
 
 variable "vpc_cidr" {
