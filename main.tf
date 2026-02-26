@@ -252,6 +252,10 @@ resource "aws_eks_cluster" "main" {
     security_group_ids = [aws_security_group.cluster.id]
   }
 
+  # Ship all control plane component logs to CloudWatch
+  # Enables K8s API audit trail, auth troubleshooting, and scheduler/controller debug
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
   tags = {
     Name      = "${var.project_name}-cluster"
     ManagedBy = "terraform"
@@ -269,6 +273,14 @@ resource "aws_eks_cluster" "main" {
 # aws_eks_node_group tags go to the NodeGroup/ASG but do not propagate to instances.
 resource "aws_launch_template" "node" {
   name_prefix = "${var.project_name}-node-"
+
+  # Enforce IMDSv2 — prevents SSRF exploitation of the EC2 instance metadata service.
+  # hop_limit=1 ensures containers cannot reach the metadata endpoint (requires 2 hops).
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
 
   tag_specifications {
     resource_type = "instance"
