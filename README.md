@@ -17,7 +17,7 @@ Terraform configuration for provisioning the complete AWS infrastructure for Bor
 │                                                                          │
 │  ┌──────────────────────── VPC (10.0.0.0/16) ────────────────────────    │
 │  │                                                                    │  │
-│  │  Public Subnets (3 AZs)                                            │   
+│  │  Public Subnets (3 AZs)                                            │  │ 
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │  │
 │  │  │  10.0.0.0/24 │  │  10.0.1.0/24 │  │  10.0.2.0/24 │              │  │
 │  │  │    AZ-a      │  │    AZ-b      │  │    AZ-c      │              │  │
