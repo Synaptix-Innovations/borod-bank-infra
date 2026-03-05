@@ -56,7 +56,7 @@ Terraform configuration for provisioning the complete AWS infrastructure for Bor
 │  ┌──────────┐  ┌───────────┤  ┌─────────┐  ┌──────────┐                  │
 │  │   IGW    │  │ VPC Flow  │  │   EFS   │  │   S3     │                  │
 │  │          │  │   Logs    │  │ (Maven  │  │ (Loki +  │                  │
-│  │          │  │ CloudWatch│  │  cache) │  │ TF state)│                 │
+│  │          │  │ CloudWatch│  │  cache) │  │ TF state)│                  │
 │  └──────────┘  └───────────┘  └─────────┘  └──────────┘                  │
 │                                                                          │
 │  KMS: 3 keys (EBS, RDS, EFS)  │  IRSA: 6 roles  │  EIPs: 3 (static)      │
